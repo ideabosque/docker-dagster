@@ -1,0 +1,22 @@
+# Secrets
+.env
+id_rsa
+bastion_id_rsa
+*.pem
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml

@@ -1,0 +1,93 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: dagster-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dagster}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dagster_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-dagster}
+    volumes:
+      - dagster-postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dagster}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  dagster-webserver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dagster-webserver
+    command: ["dagster-webserver", "-h", "0.0.0.0", "-p", "3000", "-w", "workspace.yaml"]
+    ports:
+      - "3000:3000"
+    volumes:
+      - ${PROJECT_PATH}:/opt/dagster/project
+    environment:
+      DAGSTER_HOME: /opt/dagster
+      DAGSTER_PG_HOST: postgres
+      DAGSTER_PG_PORT: "5432"
+      DAGSTER_PG_USER: ${POSTGRES_USER:-dagster}
+      DAGSTER_PG_PASSWORD: ${POSTGRES_PASSWORD:-dagster_pass}
+      DAGSTER_PG_DB: ${POSTGRES_DB:-dagster}
+      REDSHIFT_HOST: ${REDSHIFT_HOST}
+      REDSHIFT_PORT: ${REDSHIFT_PORT:-5439}
+      REDSHIFT_DB: ${REDSHIFT_DB}
+      REDSHIFT_USER: ${REDSHIFT_USER}
+      REDSHIFT_PASSWORD: ${REDSHIFT_PASSWORD}
+      REDSHIFT_IAM_ROLE: ${REDSHIFT_IAM_ROLE}
+      S3_BUCKET: ${S3_BUCKET}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      FORECAST_ROLE_ARN: ${FORECAST_ROLE_ARN}
+      FORECAST_DATASET_GROUP_ARN: ${FORECAST_DATASET_GROUP_ARN}
+      FORECAST_DOMAIN: ${FORECAST_DOMAIN:-CUSTOM}
+      FORECAST_HORIZON: ${FORECAST_HORIZON:-12}
+      FORECAST_FREQUENCY: ${FORECAST_FREQUENCY:-W}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  dagster-daemon:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dagster-daemon
+    command: ["dagster-daemon", "run"]
+    volumes:
+      - ${PROJECT_PATH}:/opt/dagster/project
+    environment:
+      DAGSTER_HOME: /opt/dagster
+      DAGSTER_PG_HOST: postgres
+      DAGSTER_PG_PORT: "5432"
+      DAGSTER_PG_USER: ${POSTGRES_USER:-dagster}
+      DAGSTER_PG_PASSWORD: ${POSTGRES_PASSWORD:-dagster_pass}
+      DAGSTER_PG_DB: ${POSTGRES_DB:-dagster}
+      REDSHIFT_HOST: ${REDSHIFT_HOST}
+      REDSHIFT_PORT: ${REDSHIFT_PORT:-5439}
+      REDSHIFT_DB: ${REDSHIFT_DB}
+      REDSHIFT_USER: ${REDSHIFT_USER}
+      REDSHIFT_PASSWORD: ${REDSHIFT_PASSWORD}
+      REDSHIFT_IAM_ROLE: ${REDSHIFT_IAM_ROLE}
+      S3_BUCKET: ${S3_BUCKET}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      FORECAST_ROLE_ARN: ${FORECAST_ROLE_ARN}
+      FORECAST_DATASET_GROUP_ARN: ${FORECAST_DATASET_GROUP_ARN}
+      FORECAST_DOMAIN: ${FORECAST_DOMAIN:-CUSTOM}
+      FORECAST_HORIZON: ${FORECAST_HORIZON:-12}
+      FORECAST_FREQUENCY: ${FORECAST_FREQUENCY:-W}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  dagster-postgres-data:
