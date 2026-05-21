@@ -28,3 +28,4 @@ psycopg2-binary>=2.9
 pandas>=2.0
 python-dotenv>=1.0
 pydantic-settings>=2.0
+sshtunnel>=0.4
